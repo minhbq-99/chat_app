@@ -27,7 +27,7 @@ public class Service implements Runnable
 		String result = ""; 
 		while(true)
 		{
-			char tmp = input.readNBytes(1).toString().charAt(0);
+			char tmp = new String(input.readNBytes(1)).charAt(0);
 			if (tmp == delimiter)
 				break;
 			result += tmp;
