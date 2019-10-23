@@ -16,7 +16,7 @@
 
 ### Add friend  
 - Client gửi `"ADD FRIEND\n" + "username\n"`, username của người muốn add
-- Server gửi đến người được add `"FRIEND REQUEST\n" + "username\n"`, username của người gửi friend request  
+- Server gửi `"FRIEND REQUEST\n" + "username\n"`, username của người gửi friend request  
 - Client của người được gửi friend request gửi `"FRIEND REQUEST ACCEPTED\n"` hoặc `"FRIEND REQUEST REJECTED\n"` đến server
 
 ### Choose friend to chat  
