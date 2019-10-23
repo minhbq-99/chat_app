@@ -6,6 +6,7 @@ import java.security.*;
 import java.security.spec.*;
 import java.net.*;
 import java.util.concurrent.*;
+import java.util.*;
 
 public class User {
 	private String username;
@@ -14,12 +15,10 @@ public class User {
 	private boolean isOnline;
 	public int port;
 	public InetAddress ip;
+	private byte[] salt;
 	
 	private byte[] hashPassword(String password)
 	{
-		SecureRandom random = new SecureRandom();
-		byte[] salt = new byte[16];
-		random.nextBytes(salt);
 		KeySpec spec = new PBEKeySpec(password.toCharArray(), salt, 65536, 128);
 		try
 		{
@@ -32,6 +31,10 @@ public class User {
 	
 	public User(String username, String password, InetAddress ip, int port)
 	{
+		SecureRandom random = new SecureRandom();
+		this.salt = new byte[16];
+		random.nextBytes(this.salt);
+		
 		this.username = username;
 		this.passwordHash = hashPassword(password);
 		this.friendList = new LinkedBlockingDeque<User>();
@@ -42,7 +45,7 @@ public class User {
 	
 	public boolean isEqual(String username, String password)
 	{
-		if (this.username == username && this.passwordHash == hashPassword(password))
+		if (this.username.equals(username) && Arrays.equals(this.passwordHash,hashPassword(password)))
 			return true;
 		return false;
 	}

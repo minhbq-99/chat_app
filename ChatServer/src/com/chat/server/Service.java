@@ -18,7 +18,7 @@ public class Service implements Runnable
 	
 	public void sendMsg(OutputStream output, String data) throws IOException 
 	{
-			output.write(data.getBytes());
+		output.write(data.getBytes());
 	}
 	
 	// readUntil delimiter (exclusively)
@@ -96,7 +96,7 @@ public class Service implements Runnable
 				String msg;
 				try 
 				{
-					msg = this.messageQueue.poll(100,TimeUnit.MILLISECONDS);
+					msg = this.messageQueue.poll(50,TimeUnit.MILLISECONDS);
 				}
 				catch (InterruptedException e) { msg = null; }
 				
@@ -114,6 +114,7 @@ public class Service implements Runnable
 				case "LOGIN":
 					username = readUntil(input,'\n');
 					password = readUntil(input,'\n');
+					System.out.println("[DEBUG] Login " + username + " " + password);
 					if (login(username,password,ip,port))
 						sendMsg(output, "LOGIN SUCESSFUL\n");
 					else 
