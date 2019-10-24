@@ -208,16 +208,13 @@ public class Service implements Runnable
 					}
 					break;
 				case "CHAT REQUEST ACCEPTED":
-					username = pendingUserList.remove();
-					for (User user: Server.userList)
+					username = pendingUserList.remove();	
+					for (Service service: Server.serviceList)
 					{
-						if (username.equals(user.getUsername()))	
+						if (username.equals(service.user.getUsername()))
 						{
-							for (Service service: Server.serviceList)
-							{
-								service.messageQueue.add("CHAT INFO\n" + this.user.ip + ":" + this.user.port + ":0" +  "\n");
-							}
-							sendMsg(output,"CHAT INFO\n" + user.ip + ":" + user.port + ":1" +  "\n");
+							service.messageQueue.add("CHAT INFO\n" + this.user.ip + ":" + this.user.port + ":1" +  "\n");
+							sendMsg(output,"CHAT INFO\n" + service.user.ip + ":" + service.user.port + ":0" +  "\n");
 							break;
 						}
 					}
