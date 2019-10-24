@@ -68,8 +68,11 @@ public class Service implements Runnable
 	{
 		for (Service service: Server.serviceList)
 		{
-			if (service.user.getUsername() == recipient)
+			if (service.user.getUsername().equals(recipient))
+			{
 				service.messageQueue.add("FRIEND REQUEST\n" + sender + "\n");
+				break;
+			}
 		} 
 	}
 	
@@ -77,8 +80,11 @@ public class Service implements Runnable
 	{
 		for (Service service: Server.serviceList)
 		{
-			if (service.user.getUsername() == recipient)
+			if (service.user.getUsername().equals(recipient))
+			{
 				service.messageQueue.add("CHAT REQUEST\n" + sender + "\n");
+				break;
+			}
 		} 
 	}
 	
@@ -96,13 +102,13 @@ public class Service implements Runnable
 				String msg;
 				try 
 				{
-					msg = this.messageQueue.poll(50,TimeUnit.MILLISECONDS);
+					msg = this.messageQueue.poll(100,TimeUnit.MILLISECONDS);
 				}
 				catch (InterruptedException e) { msg = null; }
 				
 				if (msg != null)
 				{
-					String sender = msg.split("\n",1)[1];
+					String sender = msg.split("\n")[1];
 					this.pendingUserList.add(sender);
 					sendMsg(output, msg);
 				}
@@ -142,9 +148,10 @@ public class Service implements Runnable
 					break;
 				case "ADD FRIEND":
 					username = readUntil(input, '\n');
+					System.out.println("[DEBUG] Add friend " + username);
 					for (User user: Server.userList)
 					{
-						if (user.getUsername() == username)
+						if (user.getUsername().equals(username) && !user.getUsername().contentEquals(this.user.getUsername()))
 						{
 							if (!user.getIsOnline())
 								break;
@@ -157,9 +164,10 @@ public class Service implements Runnable
 					username = pendingUserList.remove();
 					for (User user: Server.userList)
 					{
-						if (username == user.getUsername())			
+						if (username.equals(user.getUsername()))			
 						{
 							user.friendList.add(this.user);
+							this.user.friendList.add(user);
 							break;
 						}
 					}
@@ -167,9 +175,10 @@ public class Service implements Runnable
 					break;
 				case "CHAT":
 					username = readUntil(input, '\n');
-					for (User user: Server.userList)
+					boolean find = false;
+					for (User user: this.user.friendList)
 					{
-						if (username == user.getUsername())
+						if (username.equals(user.getUsername()) && !username.equals(this.user.getUsername()))
 						{
 							if (!user.getIsOnline())
 							{
@@ -177,15 +186,18 @@ public class Service implements Runnable
 								break;
 							}
 							chatRequest(this.user.getUsername(),username);
+							find = true;
 							break;
 						}
 					}
+					if (!find)
+						sendMsg(output, "CHAT NOT AVAILABLE\n");
 					break;
 				case "CHAT REQUEST REJECTED":
 					username = pendingUserList.remove();
 					for (User user: Server.userList)
 					{
-						if (username == user.getUsername())			
+						if (username.equals(user.getUsername()))	
 						{
 							for (Service service: Server.serviceList)
 							{
@@ -199,7 +211,7 @@ public class Service implements Runnable
 					username = pendingUserList.remove();
 					for (User user: Server.userList)
 					{
-						if (username == user.getUsername())			
+						if (username.equals(user.getUsername()))	
 						{
 							for (Service service: Server.serviceList)
 							{

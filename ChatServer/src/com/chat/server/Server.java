@@ -8,7 +8,7 @@ public class Server
 {
 	private static final int PORT = 2222;
 	private static final int THREADCOUNT = 4;
-	public static ArrayList<User> userList = new ArrayList<User>();
+	public static BlockingQueue<User> userList = new LinkedBlockingDeque<User>();
 	public static ArrayList<Service> serviceList = new ArrayList<Service>();
 	
 	public static void main(String[] argv)
