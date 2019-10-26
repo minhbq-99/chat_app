@@ -11,28 +11,41 @@ public class Service implements Runnable
 	private BlockingQueue<String> messageQueue = new LinkedBlockingDeque<String>();
 	private Queue<String> pendingUserList = new LinkedList<String>();
 	
-	public Service(Socket serviceSocket)
+	public Service(Socket serviceSocket) throws SocketException
 	{
 		this.serviceSocket = serviceSocket;
+		this.serviceSocket.setSoTimeout(1000);
 	}
 	
 	public void sendMsg(OutputStream output, String data) throws IOException 
 	{
 		output.write(data.getBytes());
 	}
-	
 	// readUntil delimiter (exclusively)
-	public String readUntil(InputStream input, char delimiter) throws IOException
+	public String readUntil(InputStream input, char delimiter, String result, boolean block) throws IOException
 	{
-		String result = ""; 
-		while(true)
-		{
-			char tmp = new String(input.readNBytes(1)).charAt(0);
-			if (tmp == delimiter)
-				break;
-			result += tmp;
+		try {
+			while(true)
+			{
+				char tmp = new String(input.readNBytes(1)).charAt(0);
+				if (tmp == delimiter)
+					break;
+				result += tmp;
+			}
+			return result;
 		}
-		return result;
+		catch (SocketTimeoutException e)
+		{
+			if(block)
+			{
+				if (!result.equals(""))
+					return readUntil(input,delimiter,result,block);
+				else
+					return result;
+			}
+			else
+				return readUntil(input,delimiter,result,block);
+		}
 	}
 	
 	private boolean login(String username, String password, InetAddress ip, int port)
@@ -113,13 +126,15 @@ public class Service implements Runnable
 					sendMsg(output, msg);
 				}
 				
-				String header = readUntil(input,'\n');
+				String header = readUntil(input,'\n',new String(""),true);
 				String username, password;
 				switch(header)
 				{
+				case "":
+					break;
 				case "LOGIN":
-					username = readUntil(input,'\n');
-					password = readUntil(input,'\n');
+					username = readUntil(input,'\n',new String(""),false);
+					password = readUntil(input,'\n',new String(""),false);
 					System.out.println("[DEBUG] Login " + username + " " + password);
 					if (login(username,password,ip,port))
 						sendMsg(output, "LOGIN SUCESSFUL\n");
@@ -127,8 +142,8 @@ public class Service implements Runnable
 						sendMsg(output, "LOGIN FAILED\n");
 					break;
 				case "REGISTER":
-					username = readUntil(input,'\n');
-					password = readUntil(input,'\n');
+					username = readUntil(input,'\n',new String(""),false);
+					password = readUntil(input,'\n',new String(""),false);
 					System.out.println("[DEBUG] Register " + username + " " + password);
 					if (register(username,password,ip,port))
 						sendMsg(output, "REGISTER SUCESSFUL\n");
@@ -147,7 +162,7 @@ public class Service implements Runnable
 					sendMsg(output, response);
 					break;
 				case "ADD FRIEND":
-					username = readUntil(input, '\n');
+					username = readUntil(input, '\n',new String(""),false);
 					System.out.println("[DEBUG] Add friend " + username);
 					for (User user: Server.userList)
 					{
@@ -174,7 +189,7 @@ public class Service implements Runnable
 				case "FRIEND REQUEST REJECTED":
 					break;
 				case "CHAT":
-					username = readUntil(input, '\n');
+					username = readUntil(input, '\n',new String(""),false);
 					boolean find = false;
 					for (User user: this.user.friendList)
 					{
@@ -220,7 +235,7 @@ public class Service implements Runnable
 					}
 					break;
 				default:
-					System.out.println("[INFO] Invalid message from" + this.serviceSocket.getInetAddress());
+					System.out.println("[INFO] Invalid message from" + this.serviceSocket.getInetAddress() + " " + header);
 				}
 			}
 		}
