@@ -22,7 +22,7 @@ public class Service implements Runnable
 		output.write(data.getBytes());
 	}
 	// readUntil delimiter (exclusively)
-	public String readUntil(InputStream input, char delimiter, String result, boolean block) throws IOException
+	public String readUntil(InputStream input, char delimiter, String result, boolean notBlock) throws IOException
 	{
 		try {
 			while(true)
@@ -36,15 +36,15 @@ public class Service implements Runnable
 		}
 		catch (SocketTimeoutException e)
 		{
-			if(block)
+			if(notBlock)
 			{
 				if (!result.equals(""))
-					return readUntil(input,delimiter,result,block);
+					return readUntil(input,delimiter,result,notBlock);
 				else
 					return result;
 			}
 			else
-				return readUntil(input,delimiter,result,block);
+				return readUntil(input,delimiter,result,notBlock);
 		}
 	}
 	
@@ -242,6 +242,15 @@ public class Service implements Runnable
 		catch (IOException e)
 		{
 			System.out.println("[INFO] Connection closed " + this.serviceSocket.getInetAddress());
+			try 
+			{
+				this.serviceSocket.close();
+			}
+			catch (IOException ex) {}
+		}
+		catch (NoSuchElementException e)
+		{
+			System.out.println("[CRITICAL] Malicious client message from " + this.serviceSocket.getInetAddress());
 			try 
 			{
 				this.serviceSocket.close();

@@ -68,4 +68,131 @@ public class Client {
 			output.write(message.getBytes());
 			return true;
 	}
+	
+	public static String readUntil(InputStream input, char delimiter, String result, boolean notBlock) throws IOException
+	{
+		try {
+			while(true)
+			{
+				char tmp = new String(input.readNBytes(1)).charAt(0);
+				if (tmp == delimiter)
+					break;
+				result += tmp;
+			}
+			return result;
+		}
+		catch (SocketTimeoutException e)
+		{
+			if(notBlock)
+			{
+				if (!result.equals(""))
+					return readUntil(input,delimiter,result,notBlock);
+				else
+					return result;
+			}
+			else
+				return readUntil(input,delimiter,result,notBlock);
+		}
+	}
+	
+	private static final String SERVERADDR = "localhost";
+	private static final int SERVERPORT = 2222;
+	
+	public static void peerToPeer(InetAddress addr, int port, boolean isServer)
+	{
+		if (isServer)
+		{
+			
+		}
+		else
+		{
+			
+		}
+	}
+	
+	public static void clientServer()
+	{
+		Socket serverSocket = null;
+		try
+		{
+			serverSocket = new Socket(SERVERADDR,SERVERPORT);
+			InputStream input = serverSocket.getInputStream();
+			OutputStream output = serverSocket.getOutputStream();
+			serverSocket.setSoTimeout(1000);
+			serverSocket.setReuseAddress(true);
+			while (true)
+			{
+				String header = readUntil(input,'\n',new String(""),true);
+				switch (header)
+				{
+				case "LOGIN SUCESSFUL":
+					break;
+				case "LOGIN FAILED":
+					break;
+				case "REGISTER SUCCESSFUL":
+					break;
+				case "REGISTER FAILED":
+					break;
+				case "FRIEND STATUS":
+					int numOfFriends = 0;
+					try
+					{
+						numOfFriends = Integer.parseInt(readUntil(input,'\n',new String(""),false));
+						for (int i = 0; i < numOfFriends; i++)
+						{
+							String[] friends = readUntil(input,'\n',new String(""),false).split(": ");
+							if (friends[1].equals("online"))
+							{
+								
+							}
+							else
+							{
+								
+							}
+						}
+					}
+					catch (NumberFormatException e)
+					{
+						System.out.println("[CRITICAL] Malicious server response " + e);
+					}
+					break;
+				case "FRIEND REQUEST":
+					String friendName = readUntil(input,'\n',new String(""),false);
+					break;
+				case "CHAT NOT AVAILABLE":
+					break;
+				case "CHAT REJECTED":
+					break;
+				case "CHAT INFO":
+					String[] response = readUntil(input,'\n',new String(""),false).split(":");
+					InetAddress addr = InetAddress.getByName(response[0]);
+					int port = 0;
+					int isServer = 0;
+					try
+					{
+						port = Integer.parseInt(response[1]);
+						isServer = Integer.parseInt(response[2]);
+						peerToPeer(addr,port,isServer==1);
+					}
+					catch (NumberFormatException e)
+					{
+						System.out.println("[CRITICAL] Malicious server response " + e);
+					}			
+					break;
+				default:
+					System.out.println("[CRITICAL] Malicious server message ");
+				}
+			}
+		}
+		catch (IOException e)
+		{
+			System.out.println("[ERROR] Cannot connect to the server");
+		}
+	}
+	
+	public static void main(String[] argv)
+	{
+		clientServer();
+	}
+	
 }
