@@ -8,13 +8,15 @@ public class Service implements Runnable
 {
 	private Socket serviceSocket;
 	private User user;
-	private BlockingQueue<String> messageQueue = new LinkedBlockingDeque<String>();
-	private Queue<String> pendingUserList = new LinkedList<String>();
+	private BlockingQueue<String> messageQueue;
+	private Queue<String> pendingUserList;
 	
 	public Service(Socket serviceSocket) throws SocketException
 	{
 		this.serviceSocket = serviceSocket;
 		this.serviceSocket.setSoTimeout(1000);
+		messageQueue = new LinkedBlockingDeque<String>();
+		pendingUserList = new LinkedList<String>();
 	}
 	
 	public void sendMsg(OutputStream output, String data) throws IOException 
@@ -210,14 +212,11 @@ public class Service implements Runnable
 					break;
 				case "CHAT REQUEST REJECTED":
 					username = pendingUserList.remove();
-					for (User user: Server.userList)
+					for (Service service: Server.serviceList)
 					{
-						if (username.equals(user.getUsername()))	
+						if (username.equals(service.user.getUsername()))
 						{
-							for (Service service: Server.serviceList)
-							{
-								service.messageQueue.add("CHAT REJECTED\n");
-							}
+							service.messageQueue.add("CHAT REJECTED\n");
 							break;
 						}
 					}
@@ -257,5 +256,7 @@ public class Service implements Runnable
 			}
 			catch (IOException ex) {}
 		}
+		this.user.setIsOnline(false);
+		Server.serviceList.remove(this);
 	}
 }

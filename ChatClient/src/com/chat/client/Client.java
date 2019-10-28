@@ -100,19 +100,68 @@ public class Client {
 	
 	public static void peerToPeer(InetAddress addr, int port, boolean isServer)
 	{
-		if (isServer)
+		
+		try 
 		{
-			
+			if (isServer)
+			{
+				ServerSocket peerServerSocket = new ServerSocket(localPort);
+				while (true)
+				{
+					peerSocket = peerServerSocket.accept();
+					if (peerSocket.getInetAddress().equals(addr) && peerSocket.getPort() == port)
+						break;
+				}
+				peerServerSocket.close();
+			}
+			else
+			{
+				peerSocket = new Socket(addr,port);
+			}
+			InputStream input = peerSocket.getInputStream();
+			OutputStream output = peerSocket.getOutputStream();
+			String header = readUntil(input,'\n',new String(""),true);
+			int len = 0;
+			switch (header)
+			{
+			case "MESSAGE":
+				len = 0;
+				try
+				{
+					len = Integer.parseInt(readUntil(input,'\n',new String(""),false));
+				}
+				catch (NumberFormatException e)
+				{
+					System.out.println("[CRITICAL] Malicious peer response");
+					break;
+				}
+				String message = new String(input.readNBytes(len));
+				break;
+			case "FILE":
+				len = 0;
+				try
+				{
+					len = Integer.parseInt(readUntil(input,'\n',new String(""),false));
+				}
+				catch (NumberFormatException e)
+				{
+					System.out.println("[CRITICAL] Malicious peer response");
+					break;
+				}
+				byte[] data = input.readNBytes(len);
+				break;
+			default:
+				System.out.println("[CRITICAL] Malicious peer message");
+			}
 		}
-		else
+		catch (IOException e)
 		{
-			
+			System.out.println("[ERROR] Cannot establish connection");
 		}
 	}
 	
 	public static void clientServer()
 	{
-		Socket serverSocket = null;
 		try
 		{
 			serverSocket = new Socket(SERVERADDR,SERVERPORT);
@@ -120,6 +169,8 @@ public class Client {
 			OutputStream output = serverSocket.getOutputStream();
 			serverSocket.setSoTimeout(1000);
 			serverSocket.setReuseAddress(true);
+			localPort = serverSocket.getLocalPort();
+			
 			while (true)
 			{
 				String header = readUntil(input,'\n',new String(""),true);
@@ -195,4 +246,7 @@ public class Client {
 		clientServer();
 	}
 	
+	private static int localPort;
+	public static Socket serverSocket;
+	public static Socket peerSocket;
 }
