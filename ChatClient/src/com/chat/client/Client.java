@@ -2,251 +2,204 @@
 package com.chat.client;
 import java.net.*;
 import java.io.*;
+import java.util.*;
 
-public class Client {
-	public static boolean sendLogin(OutputStream output, String username, String password) throws IOException
-	{
-			String message = "LOGIN\n" + username + "\n" + password + "\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	
-	public static boolean sendRegister(OutputStream output, String username, String password) throws IOException
-	{
-		
-		boolean isFound=username.indexOf(":")!=-1?true:false;
-		boolean isFound1=username.indexOf("\n")!=-1?true:false;
-		boolean isFound2=username.matches("[0-9a-zA-Z]+");
+import javax.swing.JOptionPane;
 
-		if (!isFound&&!isFound1&&isFound2) {
-			String message = "REGISTER\n" + username + "\n" + password + "\n";
-			output.write(message.getBytes());
-			return true;
-			}
-		return false;
-	}
-	
-	public static boolean sendFriend_list(OutputStream output) throws IOException
-	{
-			String message = "SHOW FRIEND\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	public static boolean sendAdd_friend(OutputStream output,String username) throws IOException
-	{
-			String message = "ADD FRIEND\n" +username+ "\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	public static boolean sendAdd_friend_accept(OutputStream output) throws IOException
-	{
-			String message = "FRIEND REQUEST ACCEPTED\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	public static boolean sendAdd_friend_rejected(OutputStream output) throws IOException
-	{
-			String message = "FRIEND REQUEST REJECTED\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	public static boolean sendChoose_friend(OutputStream output,String username) throws IOException
-	{
-			String message = "CHAT\n" + username+"\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	public static boolean sendChoose_friend_accepted(OutputStream output) throws IOException
-	{
-			String message = "CHAT REQUEST ACCEPTED\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	public static boolean sendChoose_friend_rejected(OutputStream output) throws IOException
-	{
-			String message = "CHAT REQUEST REJECTED\n";
-			output.write(message.getBytes());
-			return true;
-	}
-	
-	public static String readUntil(InputStream input, char delimiter, String result, boolean notBlock) throws IOException
-	{
-		try {
-			while(true)
-			{
-				char tmp = new String(input.readNBytes(1)).charAt(0);
-				if (tmp == delimiter)
-					break;
-				result += tmp;
-			}
-			return result;
-		}
-		catch (SocketTimeoutException e)
-		{
-			if(notBlock)
-			{
-				if (!result.equals(""))
-					return readUntil(input,delimiter,result,notBlock);
-				else
-					return result;
-			}
-			else
-				return readUntil(input,delimiter,result,notBlock);
-		}
-	}
-	
-	private static final String SERVERADDR = "localhost";
-	private static final int SERVERPORT = 2222;
-	
-	public static void peerToPeer(InetAddress addr, int port, boolean isServer)
-	{
-		
-		try 
-		{
-			if (isServer)
-			{
-				ServerSocket peerServerSocket = new ServerSocket(localPort);
-				while (true)
-				{
-					peerSocket = peerServerSocket.accept();
-					if (peerSocket.getInetAddress().equals(addr) && peerSocket.getPort() == port)
-						break;
-				}
-				peerServerSocket.close();
-			}
-			else
-			{
-				peerSocket = new Socket(addr,port);
-			}
-			InputStream input = peerSocket.getInputStream();
-			OutputStream output = peerSocket.getOutputStream();
-			String header = readUntil(input,'\n',new String(""),true);
-			int len = 0;
-			switch (header)
-			{
-			case "MESSAGE":
-				len = 0;
-				try
-				{
-					len = Integer.parseInt(readUntil(input,'\n',new String(""),false));
-				}
-				catch (NumberFormatException e)
-				{
-					System.out.println("[CRITICAL] Malicious peer response");
-					break;
-				}
-				String message = new String(input.readNBytes(len));
-				break;
-			case "FILE":
-				len = 0;
-				try
-				{
-					len = Integer.parseInt(readUntil(input,'\n',new String(""),false));
-				}
-				catch (NumberFormatException e)
-				{
-					System.out.println("[CRITICAL] Malicious peer response");
-					break;
-				}
-				byte[] data = input.readNBytes(len);
-				break;
-			default:
-				System.out.println("[CRITICAL] Malicious peer message");
-			}
-		}
-		catch (IOException e)
-		{
-			System.out.println("[ERROR] Cannot establish connection");
-		}
-	}
-	
-	public static void clientServer()
-	{
-		try
-		{
-			serverSocket = new Socket(SERVERADDR,SERVERPORT);
-			InputStream input = serverSocket.getInputStream();
-			OutputStream output = serverSocket.getOutputStream();
-			serverSocket.setSoTimeout(1000);
-			serverSocket.setReuseAddress(true);
-			localPort = serverSocket.getLocalPort();
-			
-			while (true)
-			{
-				String header = readUntil(input,'\n',new String(""),true);
-				switch (header)
-				{
-				case "LOGIN SUCESSFUL":
-					break;
-				case "LOGIN FAILED":
-					break;
-				case "REGISTER SUCCESSFUL":
-					break;
-				case "REGISTER FAILED":
-					break;
-				case "FRIEND STATUS":
-					int numOfFriends = 0;
-					try
-					{
-						numOfFriends = Integer.parseInt(readUntil(input,'\n',new String(""),false));
-						for (int i = 0; i < numOfFriends; i++)
-						{
-							String[] friends = readUntil(input,'\n',new String(""),false).split(": ");
-							if (friends[1].equals("online"))
-							{
-								
-							}
-							else
-							{
-								
-							}
-						}
-					}
-					catch (NumberFormatException e)
-					{
-						System.out.println("[CRITICAL] Malicious server response " + e);
-					}
-					break;
-				case "FRIEND REQUEST":
-					String friendName = readUntil(input,'\n',new String(""),false);
-					break;
-				case "CHAT NOT AVAILABLE":
-					break;
-				case "CHAT REJECTED":
-					break;
-				case "CHAT INFO":
-					String[] response = readUntil(input,'\n',new String(""),false).split(":");
-					InetAddress addr = InetAddress.getByName(response[0]);
-					int port = 0;
-					int isServer = 0;
-					try
-					{
-						port = Integer.parseInt(response[1]);
-						isServer = Integer.parseInt(response[2]);
-						peerToPeer(addr,port,isServer==1);
-					}
-					catch (NumberFormatException e)
-					{
-						System.out.println("[CRITICAL] Malicious server response " + e);
-					}			
-					break;
-				default:
-					System.out.println("[CRITICAL] Malicious server message ");
-				}
-			}
-		}
-		catch (IOException e)
-		{
-			System.out.println("[ERROR] Cannot connect to the server");
-		}
-	}
+import com.chat.ui.*;
+
+
+public class Client
+{
+	public static final String SERVERADDR = "localhost";
+	public static final int SERVERPORT = 2222;
+	public static Socket serverSocket;
+	public static int localPort;
+	public static List<Peer> peerList = new LinkedList<>();
+	public static Peer currentPeer;
+	public static String name;
+	public static ChatWindow ChatWindowUI;
+	private static int count = 0;
+	public static Queue<ServerSocket> listBind = new LinkedList<>();
+	public static final String downloadDir = "/download/";
 	
 	public static void main(String[] argv)
 	{
-		clientServer();
+		boolean isLogin = false;
+		serverSocket = Service.createServerSocket(Client.SERVERADDR,Client.SERVERPORT);
+		Login loginUI = new Login();
+		loginUI.setVisible(true);
+		ChatWindowUI = null;
+		while (true)
+		{
+			String header = Service.readUntil('\n',new String(""),true);
+			switch (header)
+			{
+			case "":
+				break;
+			case "LOGIN SUCESSFUL":
+			case "REGISTER SUCESSFUL":
+				name = Login.name;
+				loginUI.setVisible(false);
+				loginUI = null;
+				ChatWindowUI = new ChatWindow();
+				ChatWindowUI.setVisible(true);
+				isLogin = true;
+				break;
+			case "LOGIN FAILED":
+				JOptionPane.showMessageDialog(loginUI,
+					    "Login Failed",
+					    "Message",
+					    JOptionPane.PLAIN_MESSAGE);
+				break;
+			case "REGISTER FAILED":
+				JOptionPane.showMessageDialog(loginUI,
+					    "Register Failed",
+					    "Message",
+					    JOptionPane.PLAIN_MESSAGE);
+				break;
+			case "FRIEND STATUS":
+				int numOfFriends = 0;
+				boolean isBreak = false;
+				try
+				{
+					numOfFriends = Integer.parseInt(Service.readUntil('\n',new String(""),false));
+					for (int i = 0; i < numOfFriends; i++)
+					{
+						String[] friends = Service.readUntil('\n',new String(""),false).split(": ");
+						for (Peer peer: peerList)
+						{
+							//update peer status
+							if (peer.name.equals(friends[0]))
+							{
+								peer.isOnline = friends[1].equals("online");
+								isBreak = true;
+								break;
+							}
+						}
+						
+						//add new peer
+						if (!isBreak)
+						{
+							peerList.add(new Peer(friends[0],friends[1].equals("online")));
+						}
+					}
+					ChatWindowUI.updateListUser(peerList);
+				}
+				catch (NumberFormatException e)
+				{
+					System.out.println("[CRITICAL] Malicious server response " + e);
+				}
+				break;
+			case "FRIEND REQUEST":
+				String friendName = Service.readUntil('\n',new String(""),false);
+				int dialogButton = JOptionPane.YES_NO_OPTION;
+				int dialogResult = JOptionPane.showConfirmDialog(ChatWindowUI, "Do you know " + friendName + "?", "Friend Request", dialogButton);
+				if (dialogResult == 0)
+					Service.sendAddFriendAccepted();
+				else
+					Service.sendAddFriendRejected();
+				break;
+			case "CHAT NOT AVAILABLE":
+				JOptionPane.showMessageDialog(ChatWindowUI,
+					    "User not available",
+					    "Error",
+					    JOptionPane.WARNING_MESSAGE);
+				break;
+			case "CHAT REQUEST":
+				friendName = Service.readUntil('\n',new String(""),false);
+				dialogButton = JOptionPane.YES_NO_OPTION;
+				dialogResult = JOptionPane.showConfirmDialog(ChatWindowUI, "Do you want to chat with " + friendName + "?", "Friend Request", dialogButton);
+				if (dialogResult == 0)
+				{
+					Service.sendChatRequestAccepted();
+					for (Peer peer: peerList)
+					{
+						if (peer.name.equals(friendName))
+						{
+							Client.currentPeer = peer;
+							break;
+						}
+					}
+				}
+				else
+					Service.sendChatRequestRejected();
+				break;
+			case "CHAT REJECTED":
+				ServerSocket socket = Client.listBind.remove();
+				try
+				{
+					socket.close();
+				}
+				catch (IOException e) {}
+				JOptionPane.showMessageDialog(ChatWindowUI,
+					    "Chat request's rejected",
+					    "Error",
+					    JOptionPane.WARNING_MESSAGE);
+				break;
+			case "CHAT INFO":
+				String[] response = Service.readUntil('\n',new String(""),false).split(":");
+				int port = 0;
+				int isServer = 0;
+				try
+				{
+					port = Integer.parseInt(response[1]);
+					isServer = Integer.parseInt(response[2]);
+					if (isServer == 1)
+					{
+						Socket peer;
+						ServerSocket server = Client.listBind.remove();
+						do
+						{
+							//System.out.println("Server: " + server.getLocalPort());
+							peer = server.accept();
+						} 
+						while (!peer.getInetAddress().toString().split("/")[1].equals(response[0]));
+						Client.currentPeer.peerSocket = peer;
+					}
+					else
+					{
+						int count = 0;
+						Client.currentPeer.peerSocket = null;
+						while (Client.currentPeer.peerSocket == null)
+						{
+							//System.out.println(port);
+							Client.currentPeer.peerSocket = Service.createServerSocket(response[0],port);
+							if (count == 4) break;
+							count++;
+						}
+					}
+				}
+				catch (NumberFormatException e)
+				{
+					System.out.println("[CRITICAL] Malicious server response " + e);
+				}	
+				catch (IOException e)
+				{
+					Client.currentPeer.peerSocket = null;
+					JOptionPane.showMessageDialog(ChatWindowUI,
+						    "Cannot connect to peer",
+						    "Error",
+						    JOptionPane.WARNING_MESSAGE);
+				}
+				break;
+			default:
+				System.out.println("[CRITICAL] Malicious server message " + header);
+			}
+			
+			//Update new peer message
+			for (Peer peer: peerList)
+			{
+				if (peer.peerSocket != null)
+					Service.recvPeerMsg(peer);
+			}
+			count++;
+			if (count > 2)
+			{
+				//Update friend status
+				if (isLogin) Service.sendShowFriend();
+				count = 0;
+			}
+		}
 	}
-	
-	private static int localPort;
-	public static Socket serverSocket;
-	public static Socket peerSocket;
 }

@@ -192,6 +192,17 @@ public class Service implements Runnable
 					break;
 				case "CHAT":
 					username = readUntil(input, '\n',new String(""),false);
+					int port_;
+					try 
+					{
+						port_ = Integer.parseInt(readUntil(input, '\n',new String(""),false));
+						this.user.port = port_;
+					}
+					catch (NumberFormatException e)
+					{
+						System.out.println("[CRITICAL] Malicious client message");
+						break;
+					}
 					boolean find = false;
 					for (User user: this.user.friendList)
 					{
@@ -227,8 +238,8 @@ public class Service implements Runnable
 					{
 						if (username.equals(service.user.getUsername()))
 						{
-							service.messageQueue.add("CHAT INFO\n" + this.user.ip + ":" + this.user.port + ":1" +  "\n");
-							sendMsg(output,"CHAT INFO\n" + service.user.ip + ":" + service.user.port + ":0" +  "\n");
+							service.messageQueue.add("CHAT INFO\n" + this.user.ip.toString().split("/")[1] + ":" + this.user.port + ":1\n");
+							sendMsg(output,"CHAT INFO\n" + service.user.ip.toString().split("/")[1] + ":" + service.user.port + ":0\n");
 							break;
 						}
 					}
