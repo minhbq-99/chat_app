@@ -66,6 +66,7 @@ public class Client
 					numOfFriends = Integer.parseInt(Service.readUntil('\n',new String(""),false));
 					for (int i = 0; i < numOfFriends; i++)
 					{
+						isBreak = false;
 						String[] friends = Service.readUntil('\n',new String(""),false).split(": ");
 						for (Peer peer: peerList)
 						{
@@ -188,7 +189,8 @@ public class Client
 			}
 			
 			//Update new peer message
-			for (Peer peer: peerList)
+			List<Peer> tmpList = new LinkedList<>(peerList);
+			for (Peer peer: tmpList)
 			{
 				if (peer.peerSocket != null)
 					Service.recvPeerMsg(peer);

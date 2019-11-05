@@ -203,6 +203,7 @@ public class Service implements Runnable
 						System.out.println("[CRITICAL] Malicious client message");
 						break;
 					}
+					System.out.println("[DEBUG] Chat " + username + " " + port_);
 					boolean find = false;
 					for (User user: this.user.friendList)
 					{
