@@ -1,3 +1,5 @@
+# Chat app sử dụng giao thức tự thiết kế
+
 - Mới vào: client gửi LOGIN hoặc REGISTER:
 
 ### Login
